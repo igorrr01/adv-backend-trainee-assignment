@@ -50,8 +50,20 @@ class  Advert{
 
         $limit = 10;
         $offset = Helper::paginate($limit);
+        $sortTypes = ['price','created_at'];
+        $orderTypes = ['desc','asc'];
+        $order = $_GET['order'] ?? NULL;
 
-        $stmt = $this->conn->prepare('SELECT id, title, text, created_at, price, main_photo, additional_photos FROM adverts LIMIT :limit OFFSET :offset');
+        // Сортировка
+        if(in_array($_GET['sort'],$sortTypes)){
+            $orderBy = 'ORDER BY `' . htmlspecialchars($_GET['sort'] .'` ');
+        }
+        if(isset($order) && in_array($_GET['order'],$orderTypes)){
+            $orderBy .= mb_strtoupper($order);
+        }
+        $orderBy = $orderBy ?? NULL;
+
+        $stmt = $this->conn->prepare("SELECT id, title, text, created_at, price, main_photo, additional_photos FROM adverts $orderBy LIMIT :limit OFFSET :offset");
         $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindParam(':offset', $offset['offset'], PDO::PARAM_INT);
         $stmt->execute();
