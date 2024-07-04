@@ -2,12 +2,12 @@
 
 class  Advert{
     private $conn;
+
     public function __construct($db)
     {
         $this->conn = $db;
         $json = new Json();
         $this->json = $json;
-
     }
 
     public function showAd(){
@@ -55,7 +55,7 @@ class  Advert{
         $order = $_GET['order'] ?? NULL;
 
         // Сортировка
-        if(in_array($_GET['sort'],$sortTypes)){
+        if(isset($_GET['sort']) && in_array($_GET['sort'],$sortTypes)){
             $orderBy = 'ORDER BY `' . htmlspecialchars($_GET['sort'] .'` ');
         }
         if(isset($order) && in_array($_GET['order'],$orderTypes)){
@@ -94,6 +94,68 @@ class  Advert{
                 "status" => false,
                 "status_code" => 404,
                 "message" => "Объявлений не найдено!",
+            ];
+        }
+
+        $this->json->sendJson($jsonResponse);
+    }
+
+    public function storeAdd()
+    {
+
+        // применяем функцию htmlspecialchars ко всем элементам в массиве $_POST
+        $newpost = array_map ('htmlspecialchars',$_POST);
+
+        $title = $newpost['title'] ?? NULL;
+        $text = $newpost['text'] ?? NULL;
+        $price = $newpost['price'] ?? NULL;
+        $main_photo = $newpost['main_photo'] ?? NULL;
+        $additional_photos = $newpost['additional_photos'] ?? NULL;
+
+        if((is_null($text) || is_null($title) || mb_strlen($title) < 4) || (mb_strlen($title) > 200)) {
+            $jsonResponse = [
+                "status" => false,
+                "status_code" => 422,
+                "message" => "Заголовок должен иметь длину от 4 до 200 символов",
+            ];
+        }
+
+        if((is_null($text) || is_null($title) || mb_strlen($text) < 10) || (mb_strlen($text) > 1000)) {
+            $jsonResponse = [
+                "status" => false,
+                "status_code" => 422,
+                "message" => "Описание должно иметь длину от 10 до 1000 символов",
+            ];
+        }
+
+        // Считаем количество дополнительных фото, ссылки на фото разделены точкой с запятой - ";"
+        if(!is_null($additional_photos) && $additional_photos !== "") {
+            $additional_photos_count = explode(";", $additional_photos);
+            if(count($additional_photos_count) > 3){
+                $jsonResponse = [
+                    "status" => false,
+                    "status_code" => 422,
+                    "message" => "Дополнительных фото должно быть не больше 3",
+                ];
+            }
+        }
+
+        if(!isset($jsonResponse)) {
+            $query = "INSERT INTO adverts SET title = :title, text = :text, price = :price, created_at = :created_at, main_photo = :main_photo, additional_photos = :additional_photos";
+            $stmt = $this->conn->prepare($query);
+            $created_at = date("Y-m-d H:i:s");
+            $stmt->bindParam(":title", $title);
+            $stmt->bindParam(":text", $text);
+            $stmt->bindParam(":price", $price);
+            $stmt->bindParam(":created_at", $created_at);
+            $stmt->bindParam(":main_photo", $main_photo);
+            $stmt->bindParam(":additional_photos", $additional_photos);
+            $stmt->execute();
+
+            $jsonResponse = [
+                "status" => false,
+                "status_code" => 201,
+                "message" => "Пользователь успешно создан",
             ];
         }
 

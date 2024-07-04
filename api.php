@@ -3,7 +3,8 @@ require_once 'incfiles/config.php';
 
 // Проверяем наличие класса и метода, и подключаем его
 $class = ucfirst(htmlspecialchars($_GET['route']));
-$action = htmlspecialchars($_GET['action']);
+$action = $_GET['action'] ?? NULL;
+$action = isset($action) ? htmlspecialchars($action) : $action;
 
 if(file_exists('Class/'.$class.'.php')) {
 
@@ -12,7 +13,7 @@ if(file_exists('Class/'.$class.'.php')) {
         "Advert" => [
             "showAd",
             "showAllAds",
-            "storeAd"
+            "storeAdd"
         ]
     ];
 
